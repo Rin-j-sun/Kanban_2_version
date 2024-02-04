@@ -1,3 +1,46 @@
+Vue.component('task-column', {
+    props: ['title', 'tasks', 'type'],
+    template: `
+    <div class="column">
+<!--    реализация функции перемещения-->
+<!--    <div class="column" @drop="handleDrop" @dragover="handleDragOver">-->
+        <h2 class="title_column">{{ title }}</h2>
+        <task v-for="task in tasks" :key="task.id" :task="task" :type="type" @delete="handleDeleteTask" @move="moveTask" @move-to-next="moveToNext" @return="returnTask" @complete="completeTask"></task>
+<!--    </div>-->
+    </div>
+    `,
+    methods: {
+// Функционал перемещения
+        // handleDragOver(event) {
+        //     event.preventDefault();
+        // },
+        // handleDrop(event) {
+        //     const taskData = JSON.parse(event.dataTransfer.getData('text/plain'));
+        //     this.$emit('move-task', taskData);
+        // },
+
+        handleDeleteTask(task) {
+            this.$emit('delete-task', task);
+        },
+        moveTask(task) {
+            this.$emit('move-task', task);
+        },
+        moveToNext(task) {
+            const indexTesting = this.tasks.indexOf(task);
+            if (this.type === 'work' && indexTesting !== -1 && task.reason) {
+                task.reason = '';
+            }
+            this.$emit('move-to-next', task);
+        },
+        returnTask(task) {
+            this.$emit('return-task', task);
+        },
+        completeTask(task) {
+            this.$emit('complete-task', task);
+        }
+    }
+});
+
 Vue.component('app', {
     template: `
     <div id="app">
