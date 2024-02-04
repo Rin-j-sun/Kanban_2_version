@@ -1,35 +1,76 @@
-@import './base.css';
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+header{
+  background-color: darkseagreen;
+  height: 3rem;
+  margin-bottom: 1rem;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
+h1{
+  margin-top: 0;
+  padding-left: 40rem;
+}
+
+.board {
+  display: flex;
+}
+.column {
+  flex: 1;
+  margin: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: darkseagreen;
+  width: 20rem;
+  border-radius: 20px;
+}
+.task {
+  background-color: dimgrey;
+  margin: 5px 0;
+  padding: 5px;
+  cursor: pointer;
+  border-radius: 20px;
+}
+
+.right {
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+
+i {
+  border: solid black;
+  border-width: 0 3px 3px 0;
+  display: inline-block;
   padding: 3px;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+.left {
+  transform: rotate(135deg);
+  -webkit-transform: rotate(135deg);
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+.content_form{
+  background-color: darkseagreen;
+  width: 25rem;
+  height: 10rem;
+  border-radius: 20px;
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+.new_text{
+  padding-top: 1rem;
+  margin-left: 6px;
+}
+
+.new_desc{
+  margin-left: 6px;
+}
+
+.new_deadline{
+  margin-left: 6px;
+}
+
+span, h3,p {
+  color: white;
+}
+
+button{
+  border-radius: 20px;
+  background-color: palegreen;
 }
