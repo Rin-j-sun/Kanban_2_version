@@ -1,3 +1,83 @@
+Vue.component('task', {
+    props: ['task', 'type'],
+    data() {
+        return {
+            editingDescription: false,
+            editedDescription: '',
+            returnReason: ''
+        };
+    },
+    methods: {
+        handleEditDescription() {
+            if (this.editingDescription) {
+                this.task.description = this.editedDescription;
+                this.task.lastEdited = new Date().toLocaleString();
+            }
+            this.editingDescription = !this.editingDescription;
+        },
+        handleDeleteTask() {
+            this.$emit('delete', this.task);
+        },
+        handleMoveTask() {
+            if (this.type === 'plan') {
+                this.$emit('move', this.task);
+            } else if (this.type === 'work') {
+                this.$emit('move-to-next', this.task);
+            }
+        },
+        handleMoveToNext() {
+            if (this.type === 'work') {
+                this.$emit('move-to-next', this.task);
+            }
+        },
+        handleReturnToPrevious() {
+            if (this.returnReason !== '') {
+                this.task.reason = this.returnReason;
+                this.$emit('return', this.task);
+            } else {
+                alert("Введите причину возврата");
+            }
+        },
+        handleCompleteTask() {
+            this.$emit('complete', this.task);
+        },
+
+        handleDragStart(event) {
+            event.dataTransfer.setData('text/plain', JSON.stringify(this.task));
+            event.target.classList.add('dragging');
+        },
+        handleDragOver(event) {
+            event.preventDefault();
+        },
+        handleDragEnd(event) {
+            event.target.classList.remove('dragging');
+        }
+
+    },
+    template: `
+    <div class="task">
+    <div class="task" draggable="true" @dragstart="handleDragStart" @dragover="handleDragOver" @dragend="handleDragEnd">
+        <span>Создано: {{ task.createdDate }}</span>
+        <h3>{{ task.title }}</h3>
+        <p v-if="!editingDescription">{{ task.description }}</p>
+        <textarea v-model="editedDescription" v-if="editingDescription"></textarea>
+        <span v-if="task.lastEdited">Отредактировано: {{ task.lastEdited }}</span><br><br>
+        <span>Срок сдачи: {{ task.deadline }}</span><br><br>
+<!--        <button v-if="type === 'plan'" @click="handleDeleteTask">Удалить</button>-->
+<!--        <button v-if="type !== 'completed'" @click="handleEditDescription">{{ editingDescription ? 'Сохранить' : 'Редактировать' }}</button>-->
+        <button v-if="type === 'plan'" @click="handleMoveTask">Вперёд</button>
+        <button v-if="type === 'work'" @click="handleMoveToNext">Вперёд</button>
+        <button v-if="type === 'testing'" @click="handleReturnToPrevious">Откат</button>
+        <button v-if="type === 'testing'" @click="handleCompleteTask">Выполнено</button>
+        <br>
+        <textarea v-if="type === 'testing'" v-model="returnReason" placeholder="Введите причину отката"></textarea>
+        <span v-if="type === 'work' && task.reason">Причина отката: {{ task.reason }}</span>
+        <span v-if="type === 'completed'">{{ task.check }}</span>
+    </div>
+    </div>
+    `
+});
+
 Vue.component('task-column', {
     props: ['title', 'tasks', 'type'],
     template: `
