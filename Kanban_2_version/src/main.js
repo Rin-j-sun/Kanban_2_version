@@ -1,27 +1,48 @@
 Vue.component('task-form', {
     props: [],
     template: `
-    <div class="content_form">
-        <form @submit.prevent="addTask">
-          <div class="new_text">
-            <label for="task-name">Заголовок новой задачи:</label>
-            <input class="input" id="task-name" type="text" v-model="taskName"><br><br></div>
-          <div class="new_desc">  
+      <div class="content_form">
+      <form @submit.prevent="addTask">
+        <div class="new_text">
+          <label for="task-name">Заголовок новой задачи:</label>
+          <input class="input" id="task-name" type="text" v-model="taskName" required><br><br></div>
+        <div class="new_desc">
           <label for="task-desc">Описание задачи:</label>
-            <textarea id="task-desc" v-model="description"></textarea><br><br></div>
-          <div class="new_deadline">
-          <label for="deadline">Срок сдачи:</label>
-            <input type="date" id="deadline" v-model="deadline" name="deadline-task" min="2024-01-01" max="2025-12-31" required />
-            <button type="submit">Создать</button>
+          <textarea id="task-desc" v-model="description" required></textarea><br><br></div>
+        <div class="new_deadline">
+
+          <div class="new_human">
+            <label for="human">Ответственный:</label>
+            <select id="human" v-model="human" required>
+              <option value="Ivanov">Иванов</option>
+              <option value="Petrov">Петров</option>
+              <option value="Sidorov">Сидоров</option>
+            </select>
           </div>
-        </form>
-    </div>
+          
+          <div class="new_priority">
+            <label for="priority">Приоритетность:</label>
+            <select id="priority" v-model="priority" required>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+          
+          <label for="deadline">Срок сдачи:</label>
+          <input type="date" id="deadline" v-model="deadline" name="deadline-task" min="2024-01-01" max="2025-12-31" required />
+          <button type="submit">Создать</button>
+        </div>
+      </form>
+      </div>
     `,
     data() {
         return {
             taskName: '',
             description: '',
-            deadline: ''
+            deadline: '',
+            priority: 1,
+            human: 'Ivanov',
         };
     },
     methods: {
@@ -31,6 +52,8 @@ Vue.component('task-form', {
                     title: this.taskName,
                     description: this.description,
                     deadline: this.deadline,
+                    priority: this.priority,
+                    human: this.human,
                     reason: ''
                 };
                 newTask.createdDate = new Date().toLocaleDateString();
@@ -38,6 +61,8 @@ Vue.component('task-form', {
                 this.taskName = '';
                 this.description = '';
                 this.deadline = '';
+                this.priority = '';
+                this.human = '';
             } else {
                 alert("Введите название задачи");
             }
@@ -46,7 +71,7 @@ Vue.component('task-form', {
 });
 
 Vue.component('task', {
-    props: ['task', 'type'],
+    props: ['task', 'type', 'tasks'],
     data() {
         return {
             editingDescription: false,
@@ -101,17 +126,21 @@ Vue.component('task', {
         }
 
     },
+
+
     template: `
-    <div class="task">
-    <div class="task" draggable="true" @dragstart="handleDragStart" @dragover="handleDragOver" @dragend="handleDragEnd">
+      <div class="task">
+      <div class="task" draggable="true" @dragstart="handleDragStart" @dragover="handleDragOver" @dragend="handleDragEnd">
         <span>Создано: {{ task.createdDate }}</span>
         <h3>{{ task.title }}</h3>
         <p v-if="!editingDescription">{{ task.description }}</p>
         <textarea v-model="editedDescription" v-if="editingDescription"></textarea>
         <span v-if="task.lastEdited">Отредактировано: {{ task.lastEdited }}</span><br><br>
         <span>Срок сдачи: {{ task.deadline }}</span><br><br>
-<!--        <button v-if="type === 'plan'" @click="handleDeleteTask">Удалить</button>-->
-<!--        <button v-if="type !== 'completed'" @click="handleEditDescription">{{ editingDescription ? 'Сохранить' : 'Редактировать' }}</button>-->
+        <span>Приоритетность: {{ task.priority }}</span><br><br>
+        <span>Ответственный: {{ task.human }}</span><br><br>
+        <!--        <button v-if="type === 'plan'" @click="handleDeleteTask">Удалить</button>-->
+        <!--        <button v-if="type !== 'completed'" @click="handleEditDescription">{{ editingDescription ? 'Сохранить' : 'Редактировать' }}</button>-->
         <button v-if="type === 'plan'" @click="handleMoveTask">Вперёд</button>
         <button v-if="type === 'work'" @click="handleMoveToNext">Вперёд</button>
         <button v-if="type === 'testing'" @click="handleReturnToPrevious">Откат</button>
@@ -120,8 +149,8 @@ Vue.component('task', {
         <textarea v-if="type === 'testing'" v-model="returnReason" placeholder="Введите причину отката"></textarea>
         <span v-if="type === 'work' && task.reason">Причина отката: {{ task.reason }}</span>
         <span v-if="type === 'completed'">{{ task.check }}</span>
-    </div>
-    </div>
+      </div>
+      </div>
     `
 });
 
@@ -132,7 +161,8 @@ Vue.component('task-column', {
 <!--    реализация функции перемещения-->
 <!--    <div class="column" @drop="handleDrop" @dragover="handleDragOver">-->
         <h2 class="title_column">{{ title }}</h2>
-        <task v-for="task in tasks" :key="task.id" :task="task" :type="type" @delete="handleDeleteTask" @move="moveTask" @move-to-next="moveToNext" @return="returnTask" @complete="completeTask"></task>
+
+        <task v-for="task in sortedTasks"  :key="task.id" :task="task" :type="type" @delete="handleDeleteTask" @move="moveTask" @move-to-next="moveToNext" @return="returnTask" @complete="completeTask"></task>
 <!--    </div>-->
     </div>
     `,
@@ -165,20 +195,27 @@ Vue.component('task-column', {
         completeTask(task) {
             this.$emit('complete-task', task);
         }
-    }
+    },
+
+    computed: {
+        sortedTasks() {
+            return this.tasks.sort((a, b) => a.priority - b.priority);
+        }
+    },
+
 });
 
 Vue.component('app', {
     template: `
-    <div id="app">
-        <task-form @add="addTask"></task-form>
-        <div class="board">
-            <task-column title="Запланированные задачи" :tasks="planTask" type="plan" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
-            <task-column title="В работе" :tasks="workTask" type="work" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
-            <task-column title="Тестирование" :tasks="testingTask" type="testing" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
-            <task-column title="Выполненные задачи" :tasks="completedTask" type="completed"></task-column>
-        </div>
-    </div>
+      <div id="app">
+      <task-form @add="addTask"></task-form>
+      <div class="board">
+        <task-column title="Запланированные задачи" :tasks="planTask" type="plan" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
+        <task-column title="В работе" :tasks="workTask" type="work" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
+        <task-column title="Тестирование" :tasks="testingTask" type="testing" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
+        <task-column title="Выполненные задачи" :tasks="completedTask" type="completed"></task-column>
+      </div>
+      </div>
     `,
     data() {
         return {
@@ -227,14 +264,22 @@ Vue.component('app', {
             } else if (indexTesting !== -1) {
                 this.testingTask.splice(indexTesting, 1);
                 this.completedTask.push(task);
-                if (task.deadline >= task.createdDate) {
-                    task.check = 'Выполнено в срок';
-                } else {
-                    task.check = 'Просрочено';
-                }
+                //
+                // let currentDate = new Date();
+                // let deadlineDate = new Date(task.deadline);
+                //
+                // if (deadlineDate.getFullYear() >= currentDate.getFullYear() &&
+                //     deadlineDate.getMonth() >= currentDate.getMonth() &&
+                //     deadlineDate.getDate() >= currentDate.getDate()) {
+                //     task.check = 'Выполнено в срок';
+                // } else {
+                //     task.check = 'Просрочено';
+                // }
+                this.saveTasks();
             }
-            this.saveTasks();
         },
+
+
         moveToNext(task) {
             const indexWork = this.workTask.indexOf(task);
             const indexTesting = this.testingTask.indexOf(task);
@@ -245,29 +290,43 @@ Vue.component('app', {
             } else if (indexTesting !== -1) {
                 this.testingTask.splice(indexTesting, 1);
                 this.completedTask.push(task);
-                if (task.deadline >= task.createdDate) {
-                    task.check = 'Выполнено в срок';
-                } else {
-                    task.check = 'Просрочено';
-                }
+                // let currentDate = new Date();
+                // let deadlineDate = new Date(task.deadline);
+                //
+                // if (deadlineDate.getFullYear() >= currentDate.getFullYear() &&
+                //     deadlineDate.getMonth() >= currentDate.getMonth() &&
+                //     deadlineDate.getDate() >= currentDate.getDate()) {
+                //     task.check = 'Выполнено в срок';
+                // } else {
+                //     task.check = 'Просрочено';
+                // }
+                this.saveTasks();
             }
-            this.saveTasks();
         },
+
         returnTask(task) {
             this.testingTask.splice(this.testingTask.indexOf(task), 1);
             this.workTask.push(task);
             this.saveTasks();
         },
+
         completeTask(task) {
             this.testingTask.splice(this.testingTask.indexOf(task), 1);
             this.completedTask.push(task);
-            if (task.deadline >= task.createdDate) {
+
+            let currentDate = new Date();
+            let deadlineDate = new Date(task.deadline);
+
+            if (deadlineDate.getFullYear() >= currentDate.getFullYear() &&
+                deadlineDate.getMonth() >= currentDate.getMonth() &&
+                deadlineDate.getDate() >= currentDate.getDate()) {
                 task.check = 'Выполнено в срок';
             } else {
                 task.check = 'Просрочено';
             }
             this.saveTasks();
         },
+
         saveTasks() {
             localStorage.setItem('tasks', JSON.stringify({
                 planTask: this.planTask,
