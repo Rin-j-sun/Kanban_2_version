@@ -87,9 +87,6 @@ Vue.component('task', {
             }
             this.editingDescription = !this.editingDescription;
         },
-        handleDeleteTask() {
-            this.$emit('delete', this.task);
-        },
         handleMoveTask() {
             if (this.type === 'plan') {
                 this.$emit('move', this.task);
@@ -110,27 +107,18 @@ Vue.component('task', {
                 alert("Введите причину возврата");
             }
         },
+        handleDeleteTask() {
+            this.$emit('delete', this.task);
+        },
         handleCompleteTask() {
             this.$emit('complete', this.task);
         },
 
-        handleDragStart(event) {
-            event.dataTransfer.setData('text/plain', JSON.stringify(this.task));
-            event.target.classList.add('dragging');
-        },
-        handleDragOver(event) {
-            event.preventDefault();
-        },
-        handleDragEnd(event) {
-            event.target.classList.remove('dragging');
-        }
-
     },
 
-
     template: `
-      <div class="task">
-      <div class="task" draggable="true" @dragstart="handleDragStart" @dragover="handleDragOver" @dragend="handleDragEnd">
+      <div class="task" draggable="true" @dragstart="handleDragStart" @dragover="handleDragOver" @dragend="handleDrop
+">
         <span>Создано: {{ task.createdDate }}</span>
         <h3>{{ task.title }}</h3>
         <p v-if="!editingDescription">{{ task.description }}</p>
@@ -150,7 +138,6 @@ Vue.component('task', {
         <span v-if="type === 'work' && task.reason">Причина отката: {{ task.reason }}</span>
         <span v-if="type === 'completed'">{{ task.check }}</span>
       </div>
-      </div>
     `
 });
 
@@ -159,18 +146,15 @@ Vue.component('task-column', {
     template: `
     <div class="column">
 <!--    реализация функции перемещения-->
-<!--    <div class="column" @drop="handleDrop" @dragover="handleDragOver">-->
         <h2 class="title_column">{{ title }}</h2>
-
-        <task v-for="task in sortedTasks"  :key="task.id" :task="task" :type="type" @delete="handleDeleteTask" @move="moveTask" @move-to-next="moveToNext" @return="returnTask" @complete="completeTask"></task>
-<!--    </div>-->
+        <task v-for="task in sortedTasks"  :key="task.id" :task="task" :type="type" @delete="handleDeleteTask" @move="moveTask" @move-to-next="moveToNext" @return="returnTask" @complete="completeTask" @drop="handleDrop" @dragover="handleDragOver"></task>
     </div>
     `,
     methods: {
 // Функционал перемещения
-        // handleDragOver(event) {
-        //     event.preventDefault();
-        // },
+//         handleDragOver(event) {
+//             event.preventDefault();
+//         },
         // handleDrop(event) {
         //     const taskData = JSON.parse(event.dataTransfer.getData('text/plain'));
         //     this.$emit('move-task', taskData);
@@ -210,9 +194,9 @@ Vue.component('app', {
       <div id="app">
       <task-form @add="addTask"></task-form>
       <div class="board">
-        <task-column title="Запланированные задачи" :tasks="planTask" type="plan" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
-        <task-column title="В работе" :tasks="workTask" type="work" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
-        <task-column title="Тестирование" :tasks="testingTask" type="testing" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask"></task-column>
+        <task-column title="Запланированные задачи" :tasks="planTask" type="plan" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask" @drop="handleDrop" @dragover="handleDragOver"></task-column>
+        <task-column title="В работе" :tasks="workTask" type="work" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask" @drop="handleDrop" @dragover="handleDragOver"></task-column>
+        <task-column title="Тестирование" :tasks="testingTask" type="testing" @delete-task="deleteTask" @move-task="moveTask" @move-to-next="moveToNext" @return-task="returnTask" @complete-task="completeTask" @drop="handleDrop" @dragover="handleDragOver"></task-column>
         <task-column title="Выполненные задачи" :tasks="completedTask" type="completed"></task-column>
       </div>
       </div>
@@ -250,6 +234,7 @@ Vue.component('app', {
             }
             this.saveTasks();
         },
+        // Перемещение по кнопке
         moveTask(task) {
             const indexPlan = this.planTask.indexOf(task);
             const indexWork = this.workTask.indexOf(task);
@@ -302,6 +287,38 @@ Vue.component('app', {
                 // }
                 this.saveTasks();
             }
+        },
+
+        handleDragStart(event) {
+            event.dataTransfer.setData('text/plain', JSON.stringify(this.task));
+            event.target.classList.add('dragging');
+        },
+        handleDragOver(event) {
+            event.preventDefault();
+        },
+        handleDragEnter(event) {
+            event.target.classList.add('drag-enter');
+        },
+        handleDragLeave(event) {
+            event.target.classList.remove('drag-enter');
+        },
+        handleDrop(event) {
+            event.preventDefault();
+            event.target.classList.remove('drag-enter');
+
+            const draggedTask = JSON.parse(event.dataTransfer.getData('text/plain'));
+            // Удаление задачи из предыдущего столбца и добавление ее в новый столбец
+        },
+
+
+        // Функция для обновления счетчиков задач в каждом столбце
+        updateTaskCounters() {
+            const columnElements = document.querySelectorAll('.task-column');
+
+            columnElements.forEach(columnElement => {
+                const taskCount = columnElement.querySelectorAll('.task').length;
+                columnElement.querySelector('.task-counter').textContent = taskCount;
+            });
         },
 
         returnTask(task) {
