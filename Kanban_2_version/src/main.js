@@ -117,8 +117,25 @@ Vue.component('task', {
     },
 
     template: `
-      <div class="task" draggable="true" @dragstart="handleDragStart" @dragover="handleDragOver" @dragend="handleDrop
-">
+
+<!--      Данный код представляет собой компонент веб-интерфейса, который отображает список задач, пригодных для перетаскивания.-->
+
+<!--      Он содержит элемент с классом "drop-zone" с атрибутами, которые позволяют перетаскивать элементы в эту зону: @drop,-->
+<!--      @dragover.prevent и @dragenter.prevent. Когда элемент перетаскивается и отпускается в этой зоне, срабатывает метод onDrop(), -->
+<!--      который принимает перетаскиваемый элемент и определенное значение 4.-->
+
+<!--      Внутри "drop-zone" есть элементы с классом "drag-el", которые представляют отдельные задачи. Эти элементы были созданы-->
+<!--      в цикле v-for, который рендерит каждую задачу из массива listFour.-->
+
+<!--      Каждый элемент "drag-el" имеет несколько надписей, которые отображают данные о каждой задаче, такие как заголовок,-->
+<!--      описание, дата и дедлайн.-->
+
+<!--      Также элементы "drag-el" имеют атрибут draggable, который позволяет перетаскивать элементы, и событие @dragstart,-->
+<!--      которое срабатывает, когда элемент начинает перетаскиваться. Срабатывает метод startDrag(), который принимает-->
+<!--      событие перетаскивания и элемент задачи.-->
+      
+      <div class="drop-zone"  @drop="onDrop($event, 4)" @dragover.prevent @dragenter.prevent>
+      <div class="task" draggable="true" @dragstart="startDrag($event, item)">
         <span>Создано: {{ task.createdDate }}</span>
         <h3>{{ task.title }}</h3>
         <p v-if="!editingDescription">{{ task.description }}</p>
@@ -137,6 +154,7 @@ Vue.component('task', {
         <textarea v-if="type === 'testing'" v-model="returnReason" placeholder="Введите причину отката"></textarea>
         <span v-if="type === 'work' && task.reason">Причина отката: {{ task.reason }}</span>
         <span v-if="type === 'completed'">{{ task.check }}</span>
+      </div>
       </div>
     `
 });
@@ -159,6 +177,59 @@ Vue.component('task-column', {
         //     const taskData = JSON.parse(event.dataTransfer.getData('text/plain'));
         //     this.$emit('move-task', taskData);
         // },
+
+//         Метод startDrag(evt, item) вызывается при начале перетаскивания элемента.
+//         Он устанавливает параметры перетаскивания, включая тип операции "move" и разрешенные операции "move".
+//             Затем он сохраняет идентификатор элемента в поле данных перетаскивания.
+//
+//             Метод onDrop(evt, list) вызывается при отпускании элемента в новом списке.
+//         Он получает идентификатор элемента из данных перетаскивания и находит соответствующий элемент в списке.
+//         Затем он выполняет необходимые действия в зависимости от текущего и нового списка элемента:
+//
+// Если элемент находится в списке 1 и его переместили в список 2, он обновляет значение списка элемента на 2.
+// Если элемент находится в списке 2 и его переместили в список 3, он обновляет значение списка элемента на 3.
+// Если элемент находится в списке 3 и его переместили в список 2, он показывает модальное окно для ввода причины
+//         возврата, затем обновляет значение списка элемента на 2.
+// Если элемент находится в списке 3 и его переместили в список 4, он обновляет значение списка элемента на 4.
+// Код позволяет перетаскивать элементы между списками в определенном порядке и выполняет дополнительные действия,
+//         основанные на текущем и новом списке элемента
+
+        startDrag(evt, item) {
+            evt.dataTransfer.dropEffect = 'move'
+            evt.dataTransfer.effectAllowed = 'move'
+            evt.dataTransfer.setData('itemID', item.id)
+        },
+        onDrop(evt, list) {
+            const itemID = evt.dataTransfer.getData('itemID')
+            const item = this.items.find((item) => item.id === itemID)
+            switch (item.list) {
+                case 1:
+                    if (type === 'work') {
+                        item.list = 2;
+                    } else if (list !== 2) {
+                        return;
+                    }
+                    break;
+                case 2:
+                    if (list == 3) {
+                        item.list = 3;
+                    } else if (list != 3) {
+                        return;
+                    }
+                    break;
+                case 3:
+                    if (list == 2) {
+                        item.back = prompt('Укажите причину возврата',);
+                        this.reasonBack = true;
+                        item.list = 2
+                    }
+                    if (list == 4) {
+                        item.list = 4;
+                    } else if (list != 4) {
+                        return;
+                    }
+            }
+        },
 
         handleDeleteTask(task) {
             this.$emit('delete-task', task);
